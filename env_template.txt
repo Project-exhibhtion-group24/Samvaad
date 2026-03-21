@@ -1,0 +1,24 @@
+# ============================================
+# SAMVAAD - Environment Variables Template
+# ============================================
+# Copy this to .env and fill in your values
+
+# REQUIRED - Application Settings
+SECRET_KEY=samvaad-secret-key-change-in-production
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=samvaad@2024
+
+# REQUIRED - Google Gemini AI (for audio analysis)
+GOOGLE_API_KEY=your_google_gemini_api_key_here
+
+# REQUIRED - Twilio (for IVR voice calls)
+account_sid=your_twilio_account_sid_here
+auth_token=your_twilio_auth_token_here
+twilio_number=+1234567890
+my_mobile_number=+1234567890
+
+# OPTIONAL - Ethereum Blockchain
+# Leave empty to use local blockchain (works immediately)
+ETH_RPC_URL=https://cloudflare-eth.com
+CONTRACT_ADDRESS=
+ETH_PRIVATE_KEY=
