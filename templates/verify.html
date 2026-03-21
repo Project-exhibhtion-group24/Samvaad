@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Verification - PRAHARI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* - Using existing styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.5; }
+        .navbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 24px; font-weight: 700; color: #0f172a; }
+        .back-btn { padding: 8px 16px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; color: #475569; text-decoration: none; font-weight: 500; font-size: 14px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+        
+        /* Search Box */
+        .search-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .search-form { display: flex; gap: 12px; margin-top: 16px; }
+        .search-input { flex: 1; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 6px; font-family: 'Courier New', monospace; }
+        .search-btn { padding: 12px 24px; background: #3b82f6; border: none; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; }
+
+        /* Result Box */
+        .result-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .result-success { border-color: #10b981; background: #f0fdf4; }
+        .result-error { border-color: #ef4444; background: #fef2f2; }
+        .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+        .result-field { display: flex; flex-direction: column; gap: 4px; }
+        .result-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .result-value { font-size: 14px; color: #0f172a; font-weight: 600; }
+        
+        /* Badges */
+        .eth-badge { display: inline-block; background: #627eea; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .local-badge { display: inline-block; background: #64748b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        
+        .hash-display { background: #0f172a; color: #10b981; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; word-break: break-all; margin-top: 4px; }
+        
+        /* Link Button */
+        .etherscan-link {
+            display: inline-block; margin-top: 4px;
+            color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 13px;
+        }
+        .etherscan-link:hover { text-decoration: underline; }
+
+        /* Verification Status */
+        .verification-badge { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px; text-align: center; margin-bottom: 24px; }
+        .verification-icon { font-size: 48px; margin-bottom: 16px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #0f172a; }
+        .stat-label { font-size: 13px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="brand">PRAHARI</div>
+        <a href="/login" class="back-btn">← Admin Login</a>
+    </div>
+
+    <div class="container">
+        <div class="search-box">
+            <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Verify Your Grievance</h2>
+            <p style="color: #64748b; font-size: 14px;">Enter your 10-digit ticket ID to verify its immutable record on the Ethereum Blockchain.</p>
+            <form method="GET" action="/verify_blockchain" class="search-form">
+                <input type="text" name="id" class="search-input" placeholder="Enter Ticket ID (e.g., MH400001A5)" 
+                    value="{{ search_id if search_id else '' }}" required>
+                <button type="submit" class="search-btn">🔍 Verify</button>
+            </form>
+        </div>
+
+        {% if search_id %}
+            {% if search_result and search_result.found %}
+            <div class="result-box result-success">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-size: 18px; font-weight: 700; color: #065f46;">✓ Verified On-Chain</div>
+                    {% if search_result.source == 'ETHEREUM_BLOCKCHAIN' %}
+                        <span class="eth-badge">ETHEREUM SEPOLIA</span>
+                    {% else %}
+                        <span class="local-badge">LOCAL CHAIN</span>
+                    {% endif %}
+                </div>
+
+                <div class="result-grid">
+                    <div class="result-field">
+                        <div class="result-label">Ticket ID</div>
+                        <div class="result-value">#{{ search_id }}</div>
+                    </div>
+                    <div class="result-field">
+                        <div class="result-label">Registration Time</div>
+                        <div class="result-value">{{ search_result.timestamp }}</div>
+                    </div>
+                    
+                    {% if search_result.source == 'LOCAL_CHAIN_FALLBACK' %}
+                    <div class="result-field">
+                        <div class="result-label">Block Number</div>
+                        <div class="result-value">#{{ search_result.block_index }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="result-field">
+                        <div class="result-label">Status</div>
+                        <div class="result-value">
+                            {% if search_result.grievance %}
+                                {{ search_result.grievance.status }}
+                            {% else %}
+                                Recorded (On-Chain)
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if search_result.grievance %}
+                    <div class="result-field">
+                        <div class="result-label">Location</div>
+                        <div class="result-value" style="font-size: 13px;">
+                            {{ search_result.grievance.location }}, {{ search_result.grievance.city }}
+                            {% if search_result.grievance.pincode %} - {{ search_result.grievance.pincode }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="result-field">
+                        <div class="result-label">State</div>
+                        <div class="result-value">{{ search_result.grievance.state }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if search_result.tx_hash and search_result.tx_hash != 'Unavailable' %}
+                <div class="result-field" style="margin-bottom: 16px; margin-top: 16px;">
+                    <div class="result-label">🔗 Ethereum Transaction Hash</div>
+                    <div style="font-family: 'Courier New', monospace; font-size: 12px; color: #0f172a; word-break: break-all; background: #f1f5f9; padding: 8px; border-radius: 4px; margin-top: 4px;">
+                        {{ search_result.tx_hash }}
+                    </div>
+                    <a href="https://sepolia.etherscan.io/tx/{{ search_result.tx_hash }}" target="_blank" class="etherscan-link" style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                        </svg>
+                        View Proof on Etherscan
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="result-field">
+                    <div class="result-label">
+                        {% if search_result.source == 'ETHEREUM_BLOCKCHAIN' %}
+                            Audio File Hash (SHA-256)
+                        {% else %}
+                            Block Hash
+                        {% endif %}
+                    </div>
+                    <div class="hash-display">
+                        {% if search_result.source == 'ETHEREUM_BLOCKCHAIN' %}
+                            {{ search_result.audio_hash }}
+                        {% else %}
+                            {{ search_result.block_hash }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.7); padding: 12px; margin-top: 16px; border-radius: 6px;">
+                    <p style="color: #065f46; font-size: 13px; margin: 0;">
+                        <strong>🛡️ Tamper Proof:</strong> This record is cryptographically secured. 
+                        {% if search_result.source == 'ETHEREUM_BLOCKCHAIN' %}
+                        It exists on the public Ethereum Sepolia network and cannot be deleted or altered by the Prahari admins.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% else %}
+            <div class="result-box result-error">
+                <h3 style="color: #991b1b; font-size: 18px; margin-bottom: 8px;">✗ Not Found</h3>
+                <p style="color: #7f1d1d;">Ticket ID <strong>#{{ search_id }}</strong> was not found in the blockchain records.</p>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        <div class="verification-badge">
+            <div class="verification-icon">
+                {% if report.ethereum_status and 'CONNECTED' in report.ethereum_status %}
+                    🌐
+                {% else %}
+                    🔌
+                {% endif %}
+            </div>
+            <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">System Integrity</h3>
+            <div style="color: #64748b;">{{ report.message }}</div>
+            <div style="margin-top: 8px; font-size: 12px; font-weight: 600; color: #3b82f6;">
+                Network: {{ report.ethereum_status if report.ethereum_status else 'Local Only' }}
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Records</div>
+                <div class="stat-value">{{ report.total_blocks }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Consensus</div>
+                <div class="stat-value">PoS (Sepolia)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Security</div>
+                <div class="stat-value">SHA-256</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
