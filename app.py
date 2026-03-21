@@ -16,7 +16,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
-prahari_chain = Blockchain()
+samvaad_chain = Blockchain()
 grievance_db = {}  # in-memory storage for grievances
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME')
@@ -46,11 +46,11 @@ def get_greeting():
     """Returns time-appropriate greeting in Hinglish"""
     hour = datetime.datetime.now().hour
     if hour < 12:
-        return "Namaste. Aap ka swagat hai Prahari mein."
+        return "Namaste. Aap ka swagat hai Samvaad mein."
     elif hour < 18:
-        return "Namaste. Prahari helpline mein aapka swagat hai."
+        return "Namaste. Samvaad helpline mein aapka swagat hai."
     else:
-        return "Namaste. Prahari mein aapka swagat hai."
+        return "Namaste. Samvaad mein aapka swagat hai."
 
 def get_state_code(state_name):
     """Extracts 2-letter code from state name"""
@@ -107,7 +107,7 @@ def send_resolution_sms(phone_number, grievance_id):
     """Sends SMS when grievance is resolved"""
     try:
         message = twilio_client.messages.create(
-            body=f"Your grievance (ID: {grievance_id}) has been resolved. Thank you for using PRAHARI.",
+            body=f"Your grievance (ID: {grievance_id}) has been resolved. Thank you for using SAMVAAD.",
             from_=TWILIO_NUMBER,
             to=my_mobile_number
         )
@@ -371,13 +371,13 @@ def process_audio_async(recording_url, g_id):
                 grievance_db[g_id]['ai_report'] = ai_analysis
                 
                 # register on blockchain
-                blockchain_result = prahari_chain.add_data(g_id, file_hash, 'Pending')
+                blockchain_result = samvaad_chain.add_data(g_id, file_hash, 'Pending')
                 
                 # maintain local chain as backup
-                previous_block = prahari_chain.get_last_block()
+                previous_block = samvaad_chain.get_last_block()
                 if previous_block:
-                    previous_hash = prahari_chain.hash(previous_block)
-                    prahari_chain.create_block(proof=len(grievance_db), previous_hash=previous_hash)
+                    previous_hash = samvaad_chain.hash(previous_block)
+                    samvaad_chain.create_block(proof=len(grievance_db), previous_hash=previous_hash)
                 
                 print(f"✅ Background processing complete for {g_id}")
         else:
@@ -434,21 +434,21 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def admin():
-    chain_length = len(prahari_chain.chain) if hasattr(prahari_chain, 'chain') else 0
+    chain_length = len(samvaad_chain.chain) if hasattr(samvaad_chain, 'chain') else 0
     pending_db = {k: v for k, v in grievance_db.items() if v.get('status') == 'Pending'}
     return render_template('admin.html', db=pending_db, chain_len=chain_length, view='dashboard', all_db=grievance_db)
 
 @app.route("/all_grievances")
 @login_required
 def all_grievances():
-    chain_length = len(prahari_chain.chain) if hasattr(prahari_chain, 'chain') else 0
+    chain_length = len(samvaad_chain.chain) if hasattr(samvaad_chain, 'chain') else 0
     return render_template('admin.html', db=grievance_db, chain_len=chain_length, view='all', all_db=grievance_db)
 
 @app.route("/analytics")
 @login_required
 def analytics():
     """Generates analytics dashboard with category breakdown"""
-    chain_length = len(prahari_chain.chain) if hasattr(prahari_chain, 'chain') else 0
+    chain_length = len(samvaad_chain.chain) if hasattr(samvaad_chain, 'chain') else 0
     
     total = len(grievance_db)
     pending = sum(1 for v in grievance_db.values() if v.get('status') == 'Pending')
@@ -501,11 +501,11 @@ def update_status():
 @app.route("/verify_blockchain")
 def verify_blockchain():
     search_id = request.args.get('id', None)
-    report = prahari_chain.get_verification_report()
+    report = samvaad_chain.get_verification_report()
     
     search_result = None
     if search_id:
-        search_result = prahari_chain.find_grievance_in_chain(search_id)
+        search_result = samvaad_chain.find_grievance_in_chain(search_id)
         if search_result.get('found'):
             if search_id in grievance_db:
                 search_result['grievance'] = grievance_db[search_id]
@@ -514,12 +514,12 @@ def verify_blockchain():
 
 @app.route("/api/verify", methods=['GET'])
 def api_verify():
-    report = prahari_chain.get_verification_report()
+    report = samvaad_chain.get_verification_report()
     return jsonify(report)
 
 @app.route("/verify_grievance/<grievance_id>")
 def verify_grievance(grievance_id):
-    result = prahari_chain.find_grievance_in_chain(grievance_id)
+    result = samvaad_chain.find_grievance_in_chain(grievance_id)
     return jsonify(result)
 
 @app.route("/api/check_analysis/<g_id>")
@@ -542,7 +542,7 @@ def diagnostic():
     return jsonify({
         'status': 'ok',
         'grievances_count': len(grievance_db),
-        'blockchain_length': len(prahari_chain.chain) if hasattr(prahari_chain, 'chain') else 0,
+        'blockchain_length': len(samvaad_chain.chain) if hasattr(samvaad_chain, 'chain') else 0,
         'script_exists': os.path.exists('static/script.js'),
         'script_size': os.path.getsize('static/script.js') if os.path.exists('static/script.js') else 0,
         'recordings_exist': os.path.exists('static/recordings'),
