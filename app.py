@@ -226,23 +226,28 @@ def save_city():
 @app.route("/ask_pincode", methods=['GET', 'POST'])
 def ask_pincode():
     resp = VoiceResponse()
-    gather = Gather(num_digits=6, action='/save_pincode', method='POST')
-    gather.say("Apna 6 digit pincode enter karein.", voice='Polly.Aditi', language='en-IN')
+    gather = Gather(num_digits=6, timeout=10, finishOnKey="", action='/save_pincode', method='POST')
+    gather.say("Apna 6 digit pincode enter karein. Har digit ke baad rukne ki zarurat nahi hai.", voice='Polly.Aditi', language='en-IN')
     resp.append(gather)
-    resp.say("Koi jawab nahi mila. Dobara try karein.", voice='Polly.Aditi', language='en-IN')
+    resp.say("Koi jawab nahi mila ya pincode galat tha. Dobara try karein.", voice='Polly.Aditi', language='en-IN')
     resp.redirect('/ask_pincode')
     return str(resp)
 
 @app.route("/save_pincode", methods=['GET', 'POST'])
 def save_pincode():
     pincode = request.values.get('Digits', None)
-    if not pincode or len(pincode) != 6:
-        return redirect('/ask_pincode')
-    
     session_id = request.values.get('CallSid')
+    print(f"[DEBUG] /save_pincode called. Digits: {pincode}, CallSid: {session_id}")
+    if not pincode or len(pincode) != 6:
+        print("[DEBUG] Invalid or missing pincode. Redirecting to /ask_pincode.")
+        return redirect('/ask_pincode')
+
     if session_id in grievance_db:
         grievance_db[session_id]['pincode'] = pincode
-    
+        print(f"[DEBUG] Saved pincode {pincode} for session {session_id}.")
+    else:
+        print(f"[WARNING] session_id {session_id} not found in grievance_db. Pincode not saved.")
+
     resp = VoiceResponse()
     gather = Gather(input='speech', timeout=5, action='/save_location', method='POST', language='en-IN', speechTimeout='auto')
     gather.say("Theek hai. Ab aapka area ya mohalla batayein.", voice='Polly.Aditi', language='en-IN')
@@ -370,14 +375,13 @@ def process_audio_async(recording_url, g_id):
                 grievance_db[g_id]['hash'] = file_hash
                 grievance_db[g_id]['ai_report'] = ai_analysis
                 
-                # register on blockchain
+                # register on blockchain (Ethereum + local chain)
                 blockchain_result = samvaad_chain.add_data(g_id, file_hash, 'Pending')
                 
-                # maintain local chain as backup
-                previous_block = samvaad_chain.get_last_block()
-                if previous_block:
-                    previous_hash = samvaad_chain.hash(previous_block)
-                    samvaad_chain.create_block(proof=len(grievance_db), previous_hash=previous_hash)
+                # store ETH tx hash if available
+                eth_tx = blockchain_result.get('eth_tx_hash')
+                if eth_tx:
+                    grievance_db[g_id]['eth_tx_hash'] = eth_tx
                 
                 print(f"✅ Background processing complete for {g_id}")
         else:
@@ -509,6 +513,9 @@ def verify_blockchain():
         if search_result.get('found'):
             if search_id in grievance_db:
                 search_result['grievance'] = grievance_db[search_id]
+                # Supplement tx_hash from grievance_db if blockchain lookup didn't find one
+                if not search_result.get('tx_hash') and grievance_db[search_id].get('eth_tx_hash'):
+                    search_result['tx_hash'] = grievance_db[search_id]['eth_tx_hash']
     
     return render_template('verify.html', report=report, search_id=search_id, search_result=search_result)
 
